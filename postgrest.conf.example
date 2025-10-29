@@ -1,0 +1,24 @@
+# PostgREST Configuration para PostgreSQL Local
+# Copia este archivo como postgrest.conf y actualiza los valores
+
+# URI de conexión a PostgreSQL
+# Formato: postgresql://usuario:contraseña@host:puerto/base_de_datos
+db-uri = "postgresql://postgres:TU_CONTRASEÑA@localhost:5432/calendario_servicios"
+
+# Esquema de la base de datos
+db-schema = "public"
+
+# Rol anónimo (puede ser 'postgres' o crear un rol 'anon' más seguro)
+db-anon-role = "postgres"
+
+# Host y puerto donde PostgREST escuchará
+server-host = "127.0.0.1"
+server-port = 3001
+
+# Configuraciones adicionales
+jwt-secret = "supabase-secret-key"
+
+# Para desarrollo, deshabilitar autenticación JWT (no recomendado para producción)
+# db-anon-role = "anon"
+# role-claim-key = ".role"
+
