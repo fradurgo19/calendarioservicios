@@ -28,7 +28,7 @@ router.get('/', async (req: AuthRequest, res: express.Response) => {
       paramCount++;
     }
     
-    query += ' ORDER BY due_date ASC';
+    query += " ORDER BY CASE WHEN estado = 'abierto' THEN 0 ELSE 1 END, created_at DESC, date DESC";
     
     const result = await pool.query(query, params);
     res.json(result.rows);
