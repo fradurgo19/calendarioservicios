@@ -146,6 +146,7 @@ export const ResourcesManagementPage: React.FC = () => {
   const groupedResources = {
     technician: resources.filter(r => r.type === 'technician'),
     administrator: resources.filter(r => r.type === 'administrator'),
+    activity: resources.filter(r => r.type === 'activity'),
     phase: resources.filter(r => r.type === 'phase'),
   };
 
@@ -166,7 +167,7 @@ export const ResourcesManagementPage: React.FC = () => {
       <div className="max-w-7xl mx-auto p-6">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Recursos</h1>
-          <p className="text-gray-600">Administra técnicos, administradores y fases por sede</p>
+          <p className="text-gray-600">Administra técnicos, administradores, actividades y fases por sede</p>
         </div>
 
         {/* Información de Sede */}
@@ -215,6 +216,7 @@ export const ResourcesManagementPage: React.FC = () => {
                   options={[
                     { value: 'technician', label: 'Técnico' },
                     { value: 'administrator', label: 'Administrador' },
+                    { value: 'activity', label: 'Actividad' },
                     { value: 'phase', label: 'Fase' },
                   ]}
                 />
@@ -328,6 +330,47 @@ export const ResourcesManagementPage: React.FC = () => {
               ))}
               {groupedResources.administrator.length === 0 && (
                 <p className="text-gray-500 text-sm">No hay administradores registrados</p>
+              )}
+            </div>
+          </Card>
+
+          {/* Actividades */}
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold mb-4 text-amber-700">
+              Actividades ({groupedResources.activity.length})
+            </h3>
+            <div className="space-y-2">
+              {groupedResources.activity.map((resource) => (
+                <div
+                  key={resource.id}
+                  className="flex items-center justify-between p-3 bg-amber-50 rounded-lg hover:bg-amber-100 transition-colors"
+                >
+                  <div>
+                    <p className="font-medium text-gray-900">{resource.name}</p>
+                    {resource.sede_id && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Sede: {sedes.find(s => s.id === resource.sede_id)?.nombre || resource.sede_id}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={() => handleEdit(resource)}
+                      className="p-2 text-amber-700 hover:bg-amber-200 rounded"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(resource.id)}
+                      className="p-2 text-red-600 hover:bg-red-200 rounded"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {groupedResources.activity.length === 0 && (
+                <p className="text-gray-500 text-sm">No hay actividades registradas</p>
               )}
             </div>
           </Card>

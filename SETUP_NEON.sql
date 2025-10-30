@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS service_entries (
   ott TEXT NOT NULL,
   client TEXT NOT NULL,
   advisor TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('Service', 'Preparation')),
+  type TEXT NOT NULL CHECK (type IN ('Service', 'Preparation', 'Warranty')),
   equipment_state TEXT NOT NULL CHECK (equipment_state IN ('New', 'Used')),
   created_by UUID REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -62,7 +62,7 @@ CREATE INDEX IF NOT EXISTS idx_service_entries_created_at ON service_entries(cre
 CREATE TABLE IF NOT EXISTS resources (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('technician', 'administrator', 'phase')),
+  type TEXT NOT NULL CHECK (type IN ('technician', 'administrator', 'phase', 'activity')),
   available BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

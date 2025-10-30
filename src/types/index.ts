@@ -22,7 +22,7 @@ export interface User {
 
 export type ViewMode = 'month' | 'week' | 'day';
 
-export type ServiceType = 'Service' | 'Preparation';
+export type ServiceType = 'Service' | 'Preparation' | 'Warranty';
 export type EquipmentState = 'New' | 'Used';
 export type ServiceStatus = 'abierto' | 'cerrado';
 
@@ -44,7 +44,7 @@ export interface ServiceEntry {
   updated_at: string;
 }
 
-export type ResourceType = 'technician' | 'administrator' | 'phase';
+export type ResourceType = 'technician' | 'administrator' | 'phase' | 'activity';
 
 export interface Resource {
   id: string;

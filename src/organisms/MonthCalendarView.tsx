@@ -124,13 +124,15 @@ export const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({
                             .filter(Boolean) as Resource[];
                           
                           const getTypeLabel = () => {
-                            return entry.type === 'Service' ? 'Servicio' : 'Alistamiento';
+                            return entry.type === 'Service' ? 'Servicio' : entry.type === 'Preparation' ? 'Alistamiento' : 'Garantía';
                           };
                           
                           const getTypeColor = () => {
-                            return entry.type === 'Service' 
-                              ? 'bg-blue-100 text-blue-700 border-blue-200' 
-                              : 'bg-green-100 text-green-700 border-green-200';
+                            return entry.type === 'Service'
+                              ? 'bg-blue-100 text-blue-700 border-blue-200'
+                              : entry.type === 'Preparation'
+                                ? 'bg-green-100 text-green-700 border-green-200'
+                                : 'bg-purple-100 text-purple-700 border-purple-200';
                           };
                           
                           return (
@@ -160,6 +162,8 @@ export const MonthCalendarView: React.FC<MonthCalendarViewProps> = ({
                                           return 'bg-green-200 text-green-800';
                                         case 'phase':
                                           return 'bg-orange-200 text-orange-800';
+                                        case 'activity':
+                                          return 'bg-red-200 text-red-800';
                                         default:
                                           return 'bg-gray-200 text-gray-800';
                                       }

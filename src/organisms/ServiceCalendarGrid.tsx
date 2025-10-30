@@ -130,15 +130,19 @@ export const ServiceCalendarGrid: React.FC<ServiceCalendarGridProps> = ({
                 <div className="truncate" title={entry.equipment || '-'}>{entry.equipment || '-'}</div>
               </td>
               <td className="border border-gray-300 px-1 py-1 text-xs">
-                <span
-                  className={`px-1 py-0.5 rounded-full text-[10px] font-medium ${
-                    entry.type === 'Service'
-                      ? 'bg-blue-100 text-blue-700'
-                      : 'bg-green-100 text-green-700'
-                  }`}
-                >
-                  {entry.type === 'Service' ? 'Serv.' : 'Prep.'}
-                </span>
+                {(() => {
+                  const cls = entry.type === 'Service'
+                    ? 'bg-blue-100 text-blue-700'
+                    : entry.type === 'Preparation'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-purple-100 text-purple-700';
+                  const label = entry.type === 'Service' ? 'Serv.' : entry.type === 'Preparation' ? 'Prep.' : 'Garant.';
+                  return (
+                    <span className={`px-1 py-0.5 rounded-full text-[10px] font-medium ${cls}`}>
+                      {label}
+                    </span>
+                  );
+                })()}
               </td>
               <td className="border border-gray-300 px-1 py-1 text-xs">
                 <span
@@ -202,6 +206,8 @@ export const ServiceCalendarGrid: React.FC<ServiceCalendarGridProps> = ({
                                     return 'bg-green-100 text-green-700';
                                   case 'phase':
                                     return 'bg-orange-100 text-orange-700';
+                                  case 'activity':
+                                    return 'bg-red-100 text-red-700';
                                   default:
                                     return 'bg-gray-100 text-gray-700';
                                 }

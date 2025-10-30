@@ -68,13 +68,13 @@ CREATE POLICY "Users can update own service entries"
 ```
 
 ### 3. resources
-Stores technicians, administrators, and phases that can be assigned.
+Stores technicians, administrators, activities, and phases that can be assigned.
 
 ```sql
 CREATE TABLE resources (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('technician', 'administrator', 'phase')),
+  type TEXT NOT NULL CHECK (type IN ('technician', 'administrator', 'phase', 'activity')),
   available BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

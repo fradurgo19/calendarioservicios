@@ -38,7 +38,7 @@ CREATE TABLE service_entries (
   ott TEXT NOT NULL,
   client TEXT NOT NULL,
   advisor TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('Service', 'Preparation')),
+  type TEXT NOT NULL CHECK (type IN ('Service', 'Preparation', 'Warranty')),
   equipment_state TEXT NOT NULL CHECK (equipment_state IN ('New', 'Used')),
   created_by UUID REFERENCES users(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -67,7 +67,7 @@ CREATE POLICY "Users can update own service entries"
 CREATE TABLE resources (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('technician', 'administrator', 'phase')),
+  type TEXT NOT NULL CHECK (type IN ('technician', 'administrator', 'phase', 'activity')),
   available BOOLEAN DEFAULT true,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );

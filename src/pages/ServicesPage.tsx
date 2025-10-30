@@ -11,15 +11,24 @@ import { Loading } from '../atoms/Loading';
 import { Button } from '../atoms/Button';
 import { Input } from '../atoms/Input';
 import { Select } from '../atoms/Select';
-import { ViewMode, ServiceType, EquipmentState, Sede, ServiceStatus, Assignment, ServiceEntry } from '../types';
+import { ViewMode, ServiceType, EquipmentState, Sede, ServiceStatus, Assignment, ServiceEntry, Resource } from '../types';
 import { sedesApi, serviceEntriesApi, resourcesApi, assignmentsApi } from '../services/api';
-import { useAuth } from '../context/AuthContext';
+// import { useAuth } from '../context/AuthContext';
 import { useSede } from '../context/SedeContext';
 import { Plus, Archive, List, Edit2, X } from 'lucide-react';
 import { addDays, addMonths, subDays, subMonths } from 'date-fns';
 
+// Listas de Colombia
+const CO_DEPARTMENTS = [
+  'Amazonas','Antioquia','Arauca','Atlántico','Bolívar','Boyacá','Caldas','Caquetá','Casanare','Cauca','Cesar','Chocó','Córdoba','Cundinamarca','Guainía','Guaviare','Huila','La Guajira','Magdalena','Meta','Nariño','Norte de Santander','Putumayo','Quindío','Risaralda','San Andrés y Providencia','Santander','Sucre','Tolima','Valle del Cauca','Vaupés','Vichada'
+];
+
+const CO_CAPITALS = [
+  'Bogotá','Medellín','Cali','Barranquilla','Cartagena','Cúcuta','Bucaramanga','Pereira','Santa Marta','Ibagué','Villavicencio','Manizales','Pasto','Montería','Neiva','Sincelejo','Valledupar','Armenia','Popayán','Riohacha','Tunja','Floridablanca','Soledad','Itagüí','Envigado','Palmira','Dosquebradas','Yopal','Quibdó','Leticia','San Andrés','Puerto Carreño','Mitú'
+];
+
 export const ServicesPage: React.FC = () => {
-  const { user } = useAuth();
+  // const { user } = useAuth();
   const { selectedSedeId } = useSede();
   const queryClient = useQueryClient();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -28,6 +37,8 @@ export const ServicesPage: React.FC = () => {
   const [isAddingEntry, setIsAddingEntry] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedEntry, setSelectedEntry] = useState<ServiceEntry | null>(null);
+  const [resourceFilter, setResourceFilter] = useState<'all' | 'technician' | 'administrator'>('all');
+  const [selectedResourceId, setSelectedResourceId] = useState<string>('');
   const [newEntry, setNewEntry] = useState({
     site: '',
     zone: '',
@@ -38,7 +49,7 @@ export const ServicesPage: React.FC = () => {
     equipment_state: 'New' as EquipmentState,
     equipment: '',
     notas: '',
-    sede_id: '',
+    sede_id: selectedSedeId || '',
   });
 
   const { data: sedes = [] } = useQuery({
@@ -85,8 +96,18 @@ export const ServicesPage: React.FC = () => {
     },
   });
 
+  const resourceById = (id: string): Resource | undefined => resources.find(r => r.id === id);
+
+  const filteredAssignments: Assignment[] = assignments.filter(a => {
+    const res = resourceById(a.resource_id);
+    if (!res) return false;
+    if (resourceFilter === 'technician') return res.type === 'technician';
+    if (resourceFilter === 'administrator') return res.type === 'administrator';
+    return true;
+  }).filter(a => (selectedResourceId ? a.resource_id === selectedResourceId : true));
+
   const addEntryMutation = useMutation({
-    mutationFn: async (entry: any) => {
+    mutationFn: async (entry: unknown) => {
       return await serviceEntriesApi.create(entry);
     },
     onSuccess: () => {
@@ -238,14 +259,16 @@ export const ServicesPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Asegurar sede por defecto
+    const payload = { ...newEntry, sede_id: newEntry.sede_id || selectedSedeId || '' };
     if (editingId) {
-      updateEntryFullMutation.mutate({ id: editingId, data: newEntry });
+      updateEntryFullMutation.mutate({ id: editingId, data: payload as any });
     } else {
-      addEntryMutation.mutate(newEntry);
+      addEntryMutation.mutate(payload as any);
     }
   };
 
-  const handleEditService = (entry: any) => {
+  const handleEditService = (entry: ServiceEntry) => {
     setEditingId(entry.id);
     setIsAddingEntry(true);
     setNewEntry({
@@ -303,7 +326,15 @@ export const ServicesPage: React.FC = () => {
       <Navigation />
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="flex h-[calc(100vh-4rem)] overflow-hidden">
-          <ResourceSidebar resources={resources} selectedSedeId={selectedSedeId} />
+          <ResourceSidebar 
+            resources={resources} 
+            assignments={assignments}
+            currentDate={currentDate}
+            viewMode={viewMode}
+            resourceFilter={resourceFilter}
+            resourceId={selectedResourceId || null}
+            selectedSedeId={selectedSedeId} 
+          />
           <div className="flex-1 p-6 overflow-y-auto">
             <div className="mb-6 flex items-center justify-between">
               <h1 className="text-2xl font-bold text-gray-800">Servicios</h1>
@@ -339,6 +370,84 @@ export const ServicesPage: React.FC = () => {
                   onToday={handleToday}
                 />
 
+                {/* Filtros y Gráficos */}
+                <div className="mb-4 flex flex-col gap-4">
+                  <div className="flex items-center gap-4">
+                    <Select
+                      label="Filtro de Recurso"
+                      value={resourceFilter}
+                      onChange={(e) => setResourceFilter(e.target.value as 'all' | 'technician' | 'administrator')}
+                      options={[
+                        { value: 'all', label: 'Todos' },
+                        { value: 'technician', label: 'Técnicos' },
+                        { value: 'administrator', label: 'Administradores' },
+                      ]}
+                    />
+                    {resourceFilter !== 'all' && (
+                      <Select
+                        label={resourceFilter === 'technician' ? 'Técnico' : 'Administrador'}
+                        value={selectedResourceId}
+                        onChange={(e) => setSelectedResourceId(e.target.value)}
+                        options={(() => {
+                          const list = resources.filter(r => r.type === resourceFilter);
+                          const opts = list.map(r => ({ value: r.id, label: r.name }));
+                          return [{ value: '', label: 'Todos' }, ...opts];
+                        })()}
+                      />
+                    )}
+                  </div>
+
+                  {/* Gráficos simples por Zona y Sitio */}
+                  {(() => {
+                    const countBy = (key: 'zone' | 'site') => {
+                      const map = new Map<string, number>();
+                      entries.forEach((entry) => {
+                        const k = entry[key];
+                        if (!k) return;
+                        map.set(k, (map.get(k) || 0) + 1);
+                      });
+                      return Array.from(map.entries()).sort((a,b) => b[1]-a[1]).slice(0, 8);
+                    };
+
+                    const zoneData = countBy('zone');
+                    const siteData = countBy('site');
+
+                    const renderBar = (label: string, value: number, max: number, color: string) => (
+                      <div className="flex items-center gap-2" key={label}>
+                        <div className="w-40 text-xs text-gray-700 truncate" title={label}>{label}</div>
+                        <div className="flex-1 h-3 bg-gray-100 rounded">
+                          <div className={`h-3 ${color} rounded`} style={{ width: `${max ? Math.max(6, (value / max) * 100) : 0}%` }} />
+                        </div>
+                        <div className="w-8 text-right text-xs font-medium">{value}</div>
+                      </div>
+                    );
+
+                    const maxZone = zoneData[0]?.[1] || 0;
+                    const maxSite = siteData[0]?.[1] || 0;
+
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="bg-white rounded-lg shadow p-4">
+                          <h4 className="text-sm font-semibold text-gray-700 mb-3">Registros por Zona</h4>
+                          <div className="space-y-2">
+                            {zoneData.length ? zoneData.map(([label, value]) => renderBar(label, value, maxZone, 'bg-blue-400')) : (
+                              <p className="text-xs text-gray-500">Sin datos</p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="bg-white rounded-lg shadow p-4">
+                          <h4 className="text-sm font-semibold text-gray-700 mb-3">Registros por Sitio</h4>
+                          <div className="space-y-2">
+                            {siteData.length ? siteData.map(([label, value]) => renderBar(label, value, maxSite, 'bg-emerald-400')) : (
+                              <p className="text-xs text-gray-500">Sin datos</p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+
                 {isAddingEntry && (
                   <div className="mb-6 bg-white rounded-lg shadow-md">
                     <form onSubmit={handleSubmit}>
@@ -354,9 +463,10 @@ export const ServicesPage: React.FC = () => {
                           </h4>
                           <div className="grid grid-cols-2 gap-4">
                             <SedeSelector
-                              value={newEntry.sede_id || selectedSedeId || ''}
-                              onChange={(sedeId) => setNewEntry({ ...newEntry, sede_id: sedeId })}
                               sedes={sedes}
+                              selectedSedeId={(newEntry.sede_id || selectedSedeId || '') as string}
+                              onSedeChange={(sedeId) => setNewEntry({ ...newEntry, sede_id: sedeId || '' })}
+                              showAll={false}
                             />
                           </div>
                         </div>
@@ -373,19 +483,19 @@ export const ServicesPage: React.FC = () => {
                               onChange={(e) => setNewEntry({ ...newEntry, client: e.target.value })}
                               required
                             />
-                            <Input
-                              label="Sitio *"
+                            <Select
+                              label="Sitio (Capital) *"
                               value={newEntry.site}
                               onChange={(e) => setNewEntry({ ...newEntry, site: e.target.value })}
-                              required
+                              options={[{ value: '', label: 'Seleccionar ciudad' }, ...CO_CAPITALS.map(c => ({ value: c, label: c }))]}
                             />
                           </div>
                           <div className="grid grid-cols-2 gap-4 mt-4">
-                            <Input
-                              label="Zona *"
+                            <Select
+                              label="Zona (Departamento) *"
                               value={newEntry.zone}
                               onChange={(e) => setNewEntry({ ...newEntry, zone: e.target.value })}
-                              required
+                              options={[{ value: '', label: 'Seleccionar departamento' }, ...CO_DEPARTMENTS.map(d => ({ value: d, label: d }))]}
                             />
                             <Input
                               label="OTT *"
@@ -432,6 +542,7 @@ export const ServicesPage: React.FC = () => {
                               options={[
                                 { value: 'Service', label: 'Servicio' },
                                 { value: 'Preparation', label: 'Alistamiento' },
+                                { value: 'Warranty', label: 'Garantía' },
                               ]}
                             />
                             <Input
@@ -516,7 +627,7 @@ export const ServicesPage: React.FC = () => {
                 {viewMode === 'month' ? (
                   <MonthCalendarView
                     entries={entries}
-                    assignments={assignments}
+                    assignments={filteredAssignments}
                     resources={resources}
                     currentDate={currentDate}
                     onEntryClick={(entry) => setSelectedEntry(entry)}
@@ -524,7 +635,7 @@ export const ServicesPage: React.FC = () => {
                 ) : (
                   <ServiceCalendarGrid
                     entries={entries}
-                    assignments={assignments}
+                    assignments={filteredAssignments}
                     resources={resources}
                     currentDate={currentDate}
                     viewMode={viewMode}
@@ -575,11 +686,19 @@ export const ServicesPage: React.FC = () => {
                         <td className="px-4 py-3">{entry.client}</td>
                         <td className="px-4 py-3">{entry.equipment || '-'}</td>
                         <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            entry.type === 'Service' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'
-                          }`}>
-                            {entry.type}
-                          </span>
+                          {(() => {
+                            const cls = entry.type === 'Service'
+                              ? 'bg-blue-100 text-blue-700'
+                              : entry.type === 'Preparation'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-purple-100 text-purple-700';
+                            const label = entry.type === 'Service' ? 'Servicio' : entry.type === 'Preparation' ? 'Alistamiento' : 'Garantía';
+                            return (
+                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${cls}`}>
+                                {label}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="px-4 py-3">
                           {sortedDates.length > 0 ? (
@@ -616,6 +735,8 @@ export const ServicesPage: React.FC = () => {
                                                 return 'bg-green-100 text-green-700';
                                               case 'phase':
                                                 return 'bg-orange-100 text-orange-700';
+                                              case 'activity':
+                                                return 'bg-red-100 text-red-700';
                                               default:
                                                 return 'bg-gray-100 text-gray-700';
                                             }
@@ -838,6 +959,8 @@ export const ServicesPage: React.FC = () => {
                                         return 'bg-green-100 text-green-700';
                                       case 'phase':
                                         return 'bg-orange-100 text-orange-700';
+                                      case 'activity':
+                                        return 'bg-red-100 text-red-700';
                                       default:
                                         return 'bg-gray-100 text-gray-700';
                                     }
