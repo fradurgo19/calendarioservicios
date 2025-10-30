@@ -48,6 +48,15 @@ export const QuotesPage: React.FC = () => {
     },
   });
 
+  const sortedEntries = [...entries].sort((a: any, b: any) => {
+    const aOpen = (a.estado || 'abierto') === 'abierto';
+    const bOpen = (b.estado || 'abierto') === 'abierto';
+    if (aOpen !== bOpen) return aOpen ? -1 : 1; // abiertos primero
+    const aDate = new Date(a.created_at || 0).getTime();
+    const bDate = new Date(b.created_at || 0).getTime();
+    return bDate - aDate; // más reciente primero
+  });
+
   const { data: quoteAssignments = [] } = useQuery({
     queryKey: ['quote-assignments'],
     queryFn: async () => {
@@ -368,7 +377,7 @@ export const QuotesPage: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                entries.map((entry: QuoteEntry) => (
+                sortedEntries.map((entry: QuoteEntry) => (
                   <tr key={entry.id} className="hover:bg-gray-50">
                     <td className="border border-gray-300 px-4 py-2 text-center">
                       <button

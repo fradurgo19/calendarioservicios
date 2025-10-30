@@ -209,7 +209,16 @@ export const PendingItemsTable: React.FC<PendingItemsTableProps> = ({
             </tr>
           </thead>
           <tbody>
-            {items.map((item) => (
+            {[...items]
+              .sort((a: any, b: any) => {
+                const aOpen = (a.estado || 'abierto') === 'abierto';
+                const bOpen = (b.estado || 'abierto') === 'abierto';
+                if (aOpen !== bOpen) return aOpen ? -1 : 1;
+                const aDate = new Date(a.created_at || a.date || 0).getTime();
+                const bDate = new Date(b.created_at || b.date || 0).getTime();
+                return bDate - aDate;
+              })
+              .map((item) => (
               <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="px-4 py-3">
                   {sedes.find(s => s.id === item.sede_id)?.nombre || item.sede_id || '-'}
